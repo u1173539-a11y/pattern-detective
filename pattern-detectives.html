@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Detectives</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Comic Sans MS',cursive;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+.page{display:none;max-width:900px;margin:0 auto;background:white;border-radius:20px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3);min-height:80vh}
+.page.active{display:block;animation:fadeIn 0.5s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{color:#667eea;text-align:center;font-size:2.5em;margin-bottom:20px}
+.pizza-emoji{font-size:6em;margin:30px 0;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+button{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;padding:15px 40px;font-size:1.2em;border-radius:50px;cursor:pointer;margin:20px 10px;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
+button:hover{transform:translateY(-2px)}
+.suspects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin:20px 0}
+.suspect{background:#f8f9fa;padding:15px;border-radius:15px;text-align:center;border:3px solid #e9ecef}
+.suspect-emoji{font-size:3em;margin-bottom:10px}
+.suspect-name{font-weight:bold;color:#495057}
+.clue-tracker{background:#fff3cd;border:3px solid #ffc107;border-radius:15px;padding:20px;margin:20px 0}
+.clue-letters{display:flex;gap:10px;margin:15px 0;justify-content:center;flex-wrap:nowrap}
+.letter-box{width:50px;height:50px;border:3px dashed #6c757d;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:bold;background:white}
+.letter-box.filled{border:3px solid #28a745;background:#d4edda;color:#155724}
+.pattern-puzzle{background:#e7f3ff;border-radius:15px;padding:25px;margin:20px 0}
+.pattern-display{display:flex;gap:15px;align-items:center;justify-content:center;margin:20px 0;flex-wrap:wrap}
+.pattern-item{font-size:3em}
+.drop-zone{width:80px;height:80px;border:3px dashed #667eea;border-radius:10px;display:flex;align-items:center;justify-content:center;background:white;font-size:2.5em;cursor:pointer}
+.drop-zone.correct{border-color:#28a745;background:#d4edda}
+.drop-zone.incorrect{border-color:#dc3545}
+.options-container{display:flex;gap:15px;justify-content:center;margin:20px 0;flex-wrap:wrap}
+.option-item{font-size:3em;cursor:pointer;padding:10px;background:white;border-radius:10px;border:3px solid #dee2e6}
+.option-item:hover{transform:scale(1.1);border-color:#667eea}
+.option-item.used{opacity:0.3;cursor:not-allowed}
+.reveal-section{background:#d4edda;border:3px solid #28a745;border-radius:15px;padding:20px;margin:20px 0;text-align:center;display:none}
+.reveal-section.show{display:block}
+.secret-letter{font-size:4em;color:#155724;font-weight:bold;margin:10px 0}
+.progress-bar{background:#e9ecef;height:30px;border-radius:15px;overflow:hidden;margin:20px 0}
+.progress-fill{background:linear-gradient(90deg,#667eea 0%,#764ba2 100%);height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:30px}
+.number-pattern{display:flex;gap:10px;justify-content:center;align-items:center;margin:20px 0;flex-wrap:wrap}
+.number-box{width:60px;height:60px;border:3px solid #667eea;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:bold;background:white}
+.number-input{width:60px;height:60px;border:3px dashed #667eea;border-radius:10px;text-align:center;font-size:1.5em;font-weight:bold}
+.instruction-box{background:#f8f9fa;border-left:5px solid #667eea;padding:15px;margin:15px 0;border-radius:5px}
+.notebook{background:#fff;border:3px solid #667eea;border-radius:15px;padding:20px;margin:20px 0}
+.notebook h3{color:#667eea;margin-bottom:10px}
+.notebook textarea{width:100%;min-height:80px;padding:10px;border:2px solid #dee2e6;border-radius:10px;font-size:1em;margin:10px 0}
+.notebook button{margin:5px;padding:10px 20px;font-size:1em}
+.voice-btn{background:#dc3545}
+.voice-btn.recording{background:#28a745;animation:pulse 1s infinite}
+.puzzle-creator{background:#f0f8ff;border:3px solid #667eea;border-radius:15px;padding:20px;margin:20px 0}
+.puzzle-creator input,.puzzle-creator select{padding:10px;margin:5px;border:2px solid #dee2e6;border-radius:5px;font-size:1em}
+.shared-puzzles{background:#fff3cd;border:3px solid #ffc107;border-radius:15px;padding:20px;margin:20px 0}
+.puzzle-card{background:white;border:2px solid #dee2e6;border-radius:10px;padding:15px;margin:10px 0}
+.puzzle-card h4{color:#667eea}
+.collab-indicator{background:#d4edda;border:2px solid #28a745;border-radius:10px;padding:10px;margin:10px 0;text-align:center;color:#155724}
+</style>
+</head>
+<body>
+
+<!-- Page 0 -->
+<div class="page active" id="page-0">
+<div style="text-align:center">
+<h1>🔍 Crack the Code:<br>Pattern Detectives 🔍</h1>
+<div class="pizza-emoji">🍕</div>
+<h2 style="color:#dc3545">Mystery of the Poisoned Pizza!</h2>
+<button onclick="nextPage()">Start Investigation! 🕵️</button>
+</div>
+</div>
+
+<!-- Page 1 -->
+<div class="page" id="page-1">
+<h1>Welcome Detectives! 🕵️‍♀️🕵️‍♂️</h1>
+<div class="instruction-box">
+<p style="font-size:1.2em;line-height:1.8">
+<strong>In this book, you will learn about patterns and how they repeat or grow.</strong><br><br>
+🔄 You will see patterns made with shapes, numbers, and emojis. 🔢🔷<br><br>
+🧩 Each puzzle gives you a secret letter. Collect all letters to find clues! 🧩<br><br>
+🗒️ Use your <strong>Detective Notebook</strong> to write observations and record your thinking out loud! 🎤<br><br>
+✏️ <strong>Create your own puzzles</strong> to challenge your classmates! 🚀<br><br>
+👥 Work together! Try puzzles made by your friends and share your own! 👥<br><br>
+🔐 Solve all 3 clues to discover who poisoned the pizza! 🔐<br><br>
+🌟 By the end, you will be better at finding and completing patterns. 🌟<br><br>
+🕵️‍♂️ Your detective adventure starts now! 🕵️‍♂️
+</p>
+</div>
+<div class="instruction-box" style="border-left-color:#28a745">
+<p><strong>📚 Year 2 Maths - Curriculum Link (AC9M2A01):</strong><br>
+This unit will teach you to recognise, describe and create additive patterns that increase or decrease by a constant amount, using numbers, shapes and objects, and identify missing elements in the pattern.</p>
+</div>
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="nextPage()">Next ➡️</button>
+</div>
+</div>
+
+<!-- Page 2 -->
+<div class="page" id="page-2">
+<h1>🔍 The Suspects 🔍</h1>
+<p style="text-align:center;font-size:1.2em;margin-bottom:20px">One of these characters poisoned the pizza!</p>
+<div class="suspects-grid">
+<div class="suspect"><div class="suspect-emoji">🧙‍♂️</div><div class="suspect-name">Wizard Winston</div><div>Grey beard, purple hat</div></div>
+<div class="suspect"><div class="suspect-emoji">👨‍🍳</div><div class="suspect-name">Chef Charlie</div><div>White hat, moustache</div></div>
+<div class="suspect"><div class="suspect-emoji">🦊</div><div class="suspect-name">Foxy Freddie</div><div>Orange fur</div></div>
+<div class="suspect"><div class="suspect-emoji">👩‍🎤</div><div class="suspect-name">Rockstar Ruby</div><div>Pink hair, sunglasses</div></div>
+<div class="suspect"><div class="suspect-emoji">🐻</div><div class="suspect-name">Detective Bruno</div><div>Brown fur, no hat</div></div>
+<div class="suspect"><div class="suspect-emoji">👴</div><div class="suspect-name">Grandpa Gus</div><div>Glasses, no hat</div></div>
+<div class="suspect"><div class="suspect-emoji">🦁</div><div class="suspect-name">Lionel Lion</div><div>Golden mane</div></div>
+<div class="suspect"><div class="suspect-emoji">👩‍🔬</div><div class="suspect-name">Scientist Sarah</div><div>Lab coat, goggles</div></div>
+<div class="suspect"><div class="suspect-emoji">🐼</div><div class="suspect-name">Penny Panda</div><div>Black/white fur</div></div>
+<div class="suspect"><div class="suspect-emoji">🤡</div><div class="suspect-name">Jolly Jack</div><div>Red nose, wig</div></div>
+</div>
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="nextPage()">Start Solving! ➡️</button>
+</div>
+</div>
+
+<!-- Page 3 -->
+<div class="page" id="page-3">
+<h1>🔎 Clue #1 🔎</h1>
+<div class="clue-tracker">
+<h3 style="text-align:center;color:#856404">Collect 9 letters!</h3>
+<div class="clue-letters" id="clue1-letters">
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="clue1-progress" style="width:0%">0/9</div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 1</h3><p><strong>Count by 2s</strong></p>
+<div class="number-pattern"><div class="number-box">2</div><div class="number-box">4</div><div class="number-box">6</div>
+<input type="number" class="number-input" id="p-1-1" data-answer="8"><div class="number-box">10</div></div>
+<button onclick="check(1,1,'W')">Check</button>
+<div class="reveal-section" id="r-1-1"><p>🎉</p><div class="secret-letter">W</div>
+<button onclick="add(1,'W')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 2</h3><p><strong>Pattern</strong></p>
+<div class="pattern-display"><span class="pattern-item">⭐</span><span class="pattern-item">🍕</span>
+<span class="pattern-item">⭐</span><span class="pattern-item">🍕</span><span class="pattern-item">⭐</span>
+<div class="drop-zone" id="d-1-2" data-answer="🍕"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-1-2','🍕',1,2,'E')">🍕</div>
+<div class="option-item" onclick="sel(this,'d-1-2','⭐',1,2,'E')">⭐</div>
+<div class="option-item" onclick="sel(this,'d-1-2','🌙',1,2,'E')">🌙</div></div>
+<div class="reveal-section" id="r-1-2"><p>🎉</p><div class="secret-letter">E</div>
+<button onclick="add(1,'E')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 3</h3><p><strong>Count back</strong></p>
+<div class="number-pattern"><div class="number-box">10</div><div class="number-box">9</div><div class="number-box">8</div>
+<input type="number" class="number-input" id="p-1-3" data-answer="7"><div class="number-box">6</div></div>
+<button onclick="check(1,3,'A')">Check</button>
+<div class="reveal-section" id="r-1-3"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(1,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 4</h3><p><strong>Shapes</strong></p>
+<div class="pattern-display"><span class="pattern-item">🔵</span><span class="pattern-item">🔴</span>
+<span class="pattern-item">🔵</span><span class="pattern-item">🔴</span>
+<div class="drop-zone" id="d-1-4" data-answer="🔵"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-1-4','🔵',1,4,'R')">🔵</div>
+<div class="option-item" onclick="sel(this,'d-1-4','🔴',1,4,'R')">🔴</div>
+<div class="option-item" onclick="sel(this,'d-1-4','🟢',1,4,'R')">🟢</div></div>
+<div class="reveal-section" id="r-1-4"><p>🎉</p><div class="secret-letter">R</div>
+<button onclick="add(1,'R')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 5</h3><p><strong>Count by 5s</strong></p>
+<div class="number-pattern"><div class="number-box">5</div><div class="number-box">10</div>
+<input type="number" class="number-input" id="p-1-5" data-answer="15">
+<div class="number-box">20</div><div class="number-box">25</div></div>
+<button onclick="check(1,5,'S')">Check</button>
+<div class="reveal-section" id="r-1-5"><p>🎉</p><div class="secret-letter">S</div>
+<button onclick="add(1,'S')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 6</h3><p><strong>Colours</strong></p>
+<div class="pattern-display"><span class="pattern-item">🟥</span><span class="pattern-item">🟩</span>
+<span class="pattern-item">🟦</span><span class="pattern-item">🟥</span><span class="pattern-item">🟩</span>
+<div class="drop-zone" id="d-1-6" data-answer="🟦"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-1-6','🟦',1,6,'A')">🟦</div>
+<div class="option-item" onclick="sel(this,'d-1-6','🟥',1,6,'A')">🟥</div>
+<div class="option-item" onclick="sel(this,'d-1-6','🟨',1,6,'A')">🟨</div></div>
+<div class="reveal-section" id="r-1-6"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(1,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 7</h3><p><strong>Count by 10s</strong></p>
+<div class="number-pattern"><div class="number-box">10</div><div class="number-box">20</div><div class="number-box">30</div>
+<input type="number" class="number-input" id="p-1-7" data-answer="40"><div class="number-box">50</div></div>
+<button onclick="check(1,7,'H')">Check</button>
+<div class="reveal-section" id="r-1-7"><p>🎉</p><div class="secret-letter">H</div>
+<button onclick="add(1,'H')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 8</h3><p><strong>Animals</strong></p>
+<div class="pattern-display"><span class="pattern-item">🐶</span><span class="pattern-item">🐱</span>
+<span class="pattern-item">🐶</span><span class="pattern-item">🐱</span>
+<div class="drop-zone" id="d-1-8" data-answer="🐶"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-1-8','🐶',1,8,'A')">🐶</div>
+<div class="option-item" onclick="sel(this,'d-1-8','🐱',1,8,'A')">🐱</div>
+<div class="option-item" onclick="sel(this,'d-1-8','🐭',1,8,'A')">🐭</div></div>
+<div class="reveal-section" id="r-1-8"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(1,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 9</h3><p><strong>Count by 3s</strong></p>
+<div class="number-pattern"><div class="number-box">3</div><div class="number-box">6</div>
+<input type="number" class="number-input" id="p-1-9" data-answer="9">
+<div class="number-box">12</div><div class="number-box">15</div></div>
+<button onclick="check(1,9,'T')">Check</button>
+<div class="reveal-section" id="r-1-9"><p>🎉</p><div class="secret-letter">T</div>
+<button onclick="add(1,'T')">Add ➕</button></div></div>
+
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="nextPage()">Continue ➡️</button>
+</div>
+
+<!-- Detective Notebook -->
+<div class="notebook">
+<h3>🗒️ Detective Notebook - Clue #1</h3>
+<p><strong>Write your observations:</strong></p>
+<textarea id="notes-1" placeholder="What patterns did you notice? Which suspects can you eliminate?"></textarea>
+<button onclick="saveNotes(1)">💾 Save Notes</button>
+<button class="voice-btn" id="voice-1" onclick="toggleVoice(1)">🎤 Record Voice Note</button>
+<div id="voice-status-1" style="margin-top:10px;color:#6c757d"></div>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="saved-1"></p>
+</div>
+
+<!-- Puzzle Creator -->
+<div class="puzzle-creator">
+<h3>✏️ Create Your Own Pattern Puzzle!</h3>
+<p>Challenge your classmates with your own pattern:</p>
+<input type="text" id="pattern-1" placeholder="Your pattern (e.g., 2,4,6,?,10)" style="width:80%">
+<input type="text" id="answer-1" placeholder="Answer" style="width:15%">
+<textarea id="puzzle-desc-1" placeholder="Describe your pattern (e.g., counting by 2s)"></textarea>
+<button onclick="sharePuzzle(1)">🚀 Share with Class</button>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="share-status-1"></p>
+</div>
+
+<!-- Collaborative Section -->
+<div class="shared-puzzles">
+<h3>👥 Classmates' Puzzles</h3>
+<p style="margin-bottom:10px">Try puzzles created by your classmates:</p>
+<div id="class-puzzles-1"></div>
+<button onclick="loadClassPuzzles(1)">🔄 Refresh Puzzles</button>
+</div>
+
+<div class="collab-indicator">
+<strong>🌟 Collaborative Learning Active!</strong><br>
+<span id="collab-count-1">Loading...</span>
+</div>
+
+</div>
+
+<!-- Page 4 with notebook -->
+<div class="page" id="page-4">
+<h1>🔎 Clue #2 🔎</h1>
+<div class="clue-tracker">
+<h3 style="text-align:center;color:#856404">Collect 9 letters!</h3>
+<div class="clue-letters" id="clue2-letters">
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="clue2-progress" style="width:0%">0/9</div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 1</h3><p><strong>Count by 4s</strong></p>
+<div class="number-pattern"><div class="number-box">4</div><div class="number-box">8</div>
+<input type="number" class="number-input" id="p-2-1" data-answer="12">
+<div class="number-box">16</div><div class="number-box">20</div></div>
+<button onclick="check(2,1,'H')">Check</button>
+<div class="reveal-section" id="r-2-1"><p>🎉</p><div class="secret-letter">H</div>
+<button onclick="add(2,'H')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 2</h3><p><strong>Pattern</strong></p>
+<div class="pattern-display"><span class="pattern-item">🍎</span><span class="pattern-item">🍊</span>
+<span class="pattern-item">🍎</span><span class="pattern-item">🍊</span><span class="pattern-item">🍎</span>
+<div class="drop-zone" id="d-2-2" data-answer="🍊"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-2-2','🍊',2,2,'A')">🍊</div>
+<div class="option-item" onclick="sel(this,'d-2-2','🍎',2,2,'A')">🍎</div>
+<div class="option-item" onclick="sel(this,'d-2-2','🍌',2,2,'A')">🍌</div></div>
+<div class="reveal-section" id="r-2-2"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(2,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 3</h3><p><strong>Count back by 3</strong></p>
+<div class="number-pattern"><div class="number-box">18</div><div class="number-box">15</div>
+<input type="number" class="number-input" id="p-2-3" data-answer="12">
+<div class="number-box">9</div><div class="number-box">6</div></div>
+<button onclick="check(2,3,'S')">Check</button>
+<div class="reveal-section" id="r-2-3"><p>🎉</p><div class="secret-letter">S</div>
+<button onclick="add(2,'S')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 4</h3><p><strong>Hearts</strong></p>
+<div class="pattern-display"><span class="pattern-item">❤️</span><span class="pattern-item">💙</span>
+<span class="pattern-item">💚</span><span class="pattern-item">❤️</span><span class="pattern-item">💙</span>
+<div class="drop-zone" id="d-2-4" data-answer="💚"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-2-4','💚',2,4,'A')">💚</div>
+<div class="option-item" onclick="sel(this,'d-2-4','❤️',2,4,'A')">❤️</div>
+<div class="option-item" onclick="sel(this,'d-2-4','💜',2,4,'A')">💜</div></div>
+<div class="reveal-section" id="r-2-4"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(2,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 5</h3><p><strong>Count by 6s</strong></p>
+<div class="number-pattern"><div class="number-box">6</div><div class="number-box">12</div><div class="number-box">18</div>
+<input type="number" class="number-input" id="p-2-5" data-answer="24">
+<div class="number-box">30</div></div>
+<button onclick="check(2,5,'B')">Check</button>
+<div class="reveal-section" id="r-2-5"><p>🎉</p><div class="secret-letter">B</div>
+<button onclick="add(2,'B')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 6</h3><p><strong>Moon & Stars</strong></p>
+<div class="pattern-display"><span class="pattern-item">🌙</span><span class="pattern-item">⭐</span>
+<span class="pattern-item">🌙</span><span class="pattern-item">⭐</span>
+<div class="drop-zone" id="d-2-6" data-answer="🌙"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-2-6','🌙',2,6,'E')">🌙</div>
+<div class="option-item" onclick="sel(this,'d-2-6','⭐',2,6,'E')">⭐</div>
+<div class="option-item" onclick="sel(this,'d-2-6','☀️',2,6,'E')">☀️</div></div>
+<div class="reveal-section" id="r-2-6"><p>🎉</p><div class="secret-letter">E</div>
+<button onclick="add(2,'E')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 7</h3><p><strong>Count by 7s</strong></p>
+<div class="number-pattern"><div class="number-box">7</div><div class="number-box">14</div>
+<input type="number" class="number-input" id="p-2-7" data-answer="21">
+<div class="number-box">28</div><div class="number-box">35</div></div>
+<button onclick="check(2,7,'A')">Check</button>
+<div class="reveal-section" id="r-2-7"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(2,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 8</h3><p><strong>Sports</strong></p>
+<div class="pattern-display"><span class="pattern-item">⚽</span><span class="pattern-item">🏀</span>
+<span class="pattern-item">⚽</span><span class="pattern-item">🏀</span><span class="pattern-item">⚽</span>
+<div class="drop-zone" id="d-2-8" data-answer="🏀"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-2-8','🏀',2,8,'R')">🏀</div>
+<div class="option-item" onclick="sel(this,'d-2-8','⚽',2,8,'R')">⚽</div>
+<div class="option-item" onclick="sel(this,'d-2-8','🏈',2,8,'R')">🏈</div></div>
+<div class="reveal-section" id="r-2-8"><p>🎉</p><div class="secret-letter">R</div>
+<button onclick="add(2,'R')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 9</h3><p><strong>Count by 8s</strong></p>
+<div class="number-pattern"><div class="number-box">8</div><div class="number-box">16</div>
+<input type="number" class="number-input" id="p-2-9" data-answer="24">
+<div class="number-box">32</div><div class="number-box">40</div></div>
+<button onclick="check(2,9,'D')">Check</button>
+<div class="reveal-section" id="r-2-9"><p>🎉</p><div class="secret-letter">D</div>
+<button onclick="add(2,'D')">Add ➕</button></div></div>
+
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="nextPage()">Continue ➡️</button>
+</div>
+
+<div class="notebook">
+<h3>🗒️ Detective Notebook - Clue #2</h3>
+<textarea id="notes-2" placeholder="What new clues did you discover? Update your suspect list!"></textarea>
+<button onclick="saveNotes(2)">💾 Save Notes</button>
+<button class="voice-btn" id="voice-2" onclick="toggleVoice(2)">🎤 Record Voice Note</button>
+<div id="voice-status-2" style="margin-top:10px;color:#6c757d"></div>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="saved-2"></p>
+</div>
+
+<div class="puzzle-creator">
+<h3>✏️ Create Your Own Pattern Puzzle!</h3>
+<input type="text" id="pattern-2" placeholder="Your pattern" style="width:80%">
+<input type="text" id="answer-2" placeholder="Answer" style="width:15%">
+<textarea id="puzzle-desc-2" placeholder="Describe your pattern"></textarea>
+<button onclick="sharePuzzle(2)">🚀 Share with Class</button>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="share-status-2"></p>
+</div>
+
+<div class="shared-puzzles">
+<h3>👥 Classmates' Puzzles</h3>
+<div id="class-puzzles-2"></div>
+<button onclick="loadClassPuzzles(2)">🔄 Refresh Puzzles</button>
+</div>
+
+<div class="collab-indicator">
+<strong>🌟 Collaborative Learning Active!</strong><br>
+<span id="collab-count-2">Loading...</span>
+</div>
+
+</div>
+
+<!-- Page 5 with notebook -->
+<div class="page" id="page-5">
+<h1>🔎 Clue #3 - Final! 🔎</h1>
+<div class="clue-tracker">
+<h3 style="text-align:center;color:#856404">Collect 9 letters!</h3>
+<div class="clue-letters" id="clue3-letters">
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+<div class="letter-box"></div><div class="letter-box"></div><div class="letter-box"></div>
+</div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="clue3-progress" style="width:0%">0/9</div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 1</h3><p><strong>Count by 9s</strong></p>
+<div class="number-pattern"><div class="number-box">9</div><div class="number-box">18</div><div class="number-box">27</div>
+<input type="number" class="number-input" id="p-3-1" data-answer="36">
+<div class="number-box">45</div></div>
+<button onclick="check(3,1,'P')">Check</button>
+<div class="reveal-section" id="r-3-1"><p>🎉</p><div class="secret-letter">P</div>
+<button onclick="add(3,'P')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 2</h3><p><strong>Transport</strong></p>
+<div class="pattern-display"><span class="pattern-item">🚗</span><span class="pattern-item">🚕</span>
+<span class="pattern-item">🚗</span><span class="pattern-item">🚕</span>
+<div class="drop-zone" id="d-3-2" data-answer="🚗"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-3-2','🚗',3,2,'U')">🚗</div>
+<div class="option-item" onclick="sel(this,'d-3-2','🚕',3,2,'U')">🚕</div>
+<div class="option-item" onclick="sel(this,'d-3-2','🚙',3,2,'U')">🚙</div></div>
+<div class="reveal-section" id="r-3-2"><p>🎉</p><div class="secret-letter">U</div>
+<button onclick="add(3,'U')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 3</h3><p><strong>Count back by 4</strong></p>
+<div class="number-pattern"><div class="number-box">24</div><div class="number-box">20</div>
+<input type="number" class="number-input" id="p-3-3" data-answer="16">
+<div class="number-box">12</div><div class="number-box">8</div></div>
+<button onclick="check(3,3,'R')">Check</button>
+<div class="reveal-section" id="r-3-3"><p>🎉</p><div class="secret-letter">R</div>
+<button onclick="add(3,'R')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 4</h3><p><strong>Flowers</strong></p>
+<div class="pattern-display"><span class="pattern-item">🌸</span><span class="pattern-item">🌺</span>
+<span class="pattern-item">🌻</span><span class="pattern-item">🌸</span><span class="pattern-item">🌺</span>
+<div class="drop-zone" id="d-3-4" data-answer="🌻"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-3-4','🌻',3,4,'P')">🌻</div>
+<div class="option-item" onclick="sel(this,'d-3-4','🌸',3,4,'P')">🌸</div>
+<div class="option-item" onclick="sel(this,'d-3-4','🌹',3,4,'P')">🌹</div></div>
+<div class="reveal-section" id="r-3-4"><p>🎉</p><div class="secret-letter">P</div>
+<button onclick="add(3,'P')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 5</h3><p><strong>Count by 11s</strong></p>
+<div class="number-pattern"><div class="number-box">11</div><div class="number-box">22</div>
+<input type="number" class="number-input" id="p-3-5" data-answer="33">
+<div class="number-box">44</div><div class="number-box">55</div></div>
+<button onclick="check(3,5,'L')">Check</button>
+<div class="reveal-section" id="r-3-5"><p>🎉</p><div class="secret-letter">L</div>
+<button onclick="add(3,'L')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 6</h3><p><strong>Faces</strong></p>
+<div class="pattern-display"><span class="pattern-item">😀</span><span class="pattern-item">😎</span>
+<span class="pattern-item">😀</span><span class="pattern-item">😎</span><span class="pattern-item">😀</span>
+<div class="drop-zone" id="d-3-6" data-answer="😎"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-3-6','😎',3,6,'E')">😎</div>
+<div class="option-item" onclick="sel(this,'d-3-6','😀',3,6,'E')">😀</div>
+<div class="option-item" onclick="sel(this,'d-3-6','😂',3,6,'E')">😂</div></div>
+<div class="reveal-section" id="r-3-6"><p>🎉</p><div class="secret-letter">E</div>
+<button onclick="add(3,'E')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 7</h3><p><strong>Count by 12s</strong></p>
+<div class="number-pattern"><div class="number-box">12</div><div class="number-box">24</div>
+<input type="number" class="number-input" id="p-3-7" data-answer="36">
+<div class="number-box">48</div><div class="number-box">60</div></div>
+<button onclick="check(3,7,'H')">Check</button>
+<div class="reveal-section" id="r-3-7"><p>🎉</p><div class="secret-letter">H</div>
+<button onclick="add(3,'H')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 8</h3><p><strong>Hands</strong></p>
+<div class="pattern-display"><span class="pattern-item">👍</span><span class="pattern-item">✌️</span>
+<span class="pattern-item">👍</span><span class="pattern-item">✌️</span>
+<div class="drop-zone" id="d-3-8" data-answer="👍"></div></div>
+<div class="options-container">
+<div class="option-item" onclick="sel(this,'d-3-8','👍',3,8,'A')">👍</div>
+<div class="option-item" onclick="sel(this,'d-3-8','✌️',3,8,'A')">✌️</div>
+<div class="option-item" onclick="sel(this,'d-3-8','👋',3,8,'A')">👋</div></div>
+<div class="reveal-section" id="r-3-8"><p>🎉</p><div class="secret-letter">A</div>
+<button onclick="add(3,'A')">Add ➕</button></div></div>
+
+<div class="pattern-puzzle"><h3>Puzzle 9</h3><p><strong>Count back by 5</strong></p>
+<div class="number-pattern"><div class="number-box">30</div><div class="number-box">25</div><div class="number-box">20</div>
+<input type="number" class="number-input" id="p-3-9" data-answer="15">
+<div class="number-box">10</div></div>
+<button onclick="check(3,9,'T')">Check</button>
+<div class="reveal-section" id="r-3-9"><p>🎉</p><div class="secret-letter">T</div>
+<button onclick="add(3,'T')">Add ➕</button></div></div>
+
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="nextPage()">Solve Mystery! ➡️</button>
+</div>
+
+<div class="notebook">
+<h3>🗒️ Detective Notebook - Clue #3</h3>
+<textarea id="notes-3" placeholder="Final clue! Who do you think poisoned the pizza?"></textarea>
+<button onclick="saveNotes(3)">💾 Save Notes</button>
+<button class="voice-btn" id="voice-3" onclick="toggleVoice(3)">🎤 Record Voice Note</button>
+<div id="voice-status-3" style="margin-top:10px;color:#6c757d"></div>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="saved-3"></p>
+</div>
+
+<div class="puzzle-creator">
+<h3>✏️ Create Your Own Pattern Puzzle!</h3>
+<input type="text" id="pattern-3" placeholder="Your pattern" style="width:80%">
+<input type="text" id="answer-3" placeholder="Answer" style="width:15%">
+<textarea id="puzzle-desc-3" placeholder="Describe your pattern"></textarea>
+<button onclick="sharePuzzle(3)">🚀 Share with Class</button>
+<p style="margin-top:10px;font-size:0.9em;color:#6c757d" id="share-status-3"></p>
+</div>
+
+<div class="shared-puzzles">
+<h3>👥 Classmates' Puzzles</h3>
+<div id="class-puzzles-3"></div>
+<button onclick="loadClassPuzzles(3)">🔄 Refresh Puzzles</button>
+</div>
+
+<div class="collab-indicator">
+<strong>🌟 Collaborative Learning Active!</strong><br>
+<span id="collab-count-3">Loading...</span>
+</div>
+
+</div>
+
+<!-- Page 6: Final -->
+<div class="page" id="page-6">
+<h1>🎉 Case Solved! 🎉</h1>
+<div style="text-align:center;margin:40px 0">
+<h2 style="color:#dc3545">The culprit is...</h2>
+<div style="font-size:8em;margin:30px 0">🧙‍♂️</div>
+<h1 style="color:#667eea;font-size:3em">Wizard Winston!</h1>
+</div>
+<div class="instruction-box" style="border-left-color:#28a745">
+<h3>🔍 The Clues:</h3>
+<p style="font-size:1.2em;line-height:2">
+✅ Clue #1: WEARSAHAT (Winston ✓, Charlie ✓)<br>
+✅ Clue #2: HASABEARD (Winston ✓, Charlie has moustache)<br>
+✅ Clue #3: PURPLEHAT (Only Wizard Winston!)<br><br>
+Wizard Winston is the only one who wears a hat, has a beard, AND wears a purple hat!
+</p>
+</div>
+<div style="text-align:center;margin:40px 0">
+<h2>🌟 Congratulations! 🌟</h2>
+<p style="font-size:1.3em;margin:20px 0">
+You completed 27 puzzles and found the culprit!<br>
+You're a certified Pattern Detective! 🏆
+</p>
+</div>
+<div class="nav-buttons">
+<button onclick="prevPage()">⬅️ Back</button>
+<button onclick="location.reload()">🔄 Play Again</button>
+</div>
+</div>
+
+<script>
+let currentPage=0;
+let progress={1:0,2:0,3:0};
+
+function nextPage(){
+const p=document.querySelectorAll('.page');
+if(currentPage<p.length-1){
+p[currentPage].classList.remove('active');
+currentPage++;
+p[currentPage].classList.add('active');
+window.scrollTo(0,0);
+}}
+
+function prevPage(){
+const p=document.querySelectorAll('.page');
+if(currentPage>0){
+p[currentPage].classList.remove('active');
+currentPage--;
+p[currentPage].classList.add('active');
+window.scrollTo(0,0);
+}}
+
+function sel(el,dzId,val,c,pn,let){
+if(el.classList.contains('used'))return;
+const dz=document.getElementById(dzId);
+const ans=dz.dataset.answer;
+dz.textContent=val;
+if(val===ans){
+dz.classList.add('correct');
+el.classList.add('used');
+setTimeout(()=>document.getElementById(`r-${c}-${pn}`).classList.add('show'),500);
+}else{
+dz.classList.add('incorrect');
+setTimeout(()=>{dz.classList.remove('incorrect');dz.textContent=''},500);
+}}
+
+function check(c,pn,let){
+const inp=document.getElementById(`p-${c}-${pn}`);
+const ans=parseInt(inp.dataset.answer);
+const ua=parseInt(inp.value);
+if(ua===ans){
+inp.style.borderColor='#28a745';
+inp.style.backgroundColor='#d4edda';
+setTimeout(()=>document.getElementById(`r-${c}-${pn}`).classList.add('show'),500);
+}else{
+inp.style.borderColor='#dc3545';
+setTimeout(()=>inp.style.borderColor='#667eea',500);
+}}
+
+function add(c,let){
+const boxes=document.querySelectorAll(`#clue${c}-letters .letter-box`);
+for(let i=0;i<boxes.length;i++){
+if(!boxes[i].classList.contains('filled')){
+boxes[i].textContent=let;
+boxes[i].classList.add('filled');
+progress[c]++;
+const total=boxes.length;
+const pct=(progress[c]/total)*100;
+const pb=document.getElementById(`clue${c}-progress`);
+pb.style.width=pct+'%';
+pb.textContent=`${progress[c]}/${total}`;
+break;
+}}}
+
+// Notebook Functions
+let voiceRecording={};
+
+async function saveNotes(clue){
+const notes=document.getElementById(`notes-${clue}`).value;
+try{
+await window.storage.set(`notes-clue${clue}`,notes,false);
+document.getElementById(`saved-${clue}`).textContent='✅ Notes saved!';
+setTimeout(()=>document.getElementById(`saved-${clue}`).textContent='',3000);
+}catch(e){
+document.getElementById(`saved-${clue}`).textContent='❌ Save failed';
+}}
+
+async function loadNotes(clue){
+try{
+const result=await window.storage.get(`notes-clue${clue}`,false);
+if(result)document.getElementById(`notes-${clue}`).value=result.value;
+}catch(e){}}
+
+function toggleVoice(clue){
+const btn=document.getElementById(`voice-${clue}`);
+const status=document.getElementById(`voice-status-${clue}`);
+if(!voiceRecording[clue]){
+if('webkitSpeechRecognition' in window||'SpeechRecognition' in window){
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const rec=new SR();
+rec.continuous=true;
+rec.interimResults=true;
+rec.onstart=()=>{
+voiceRecording[clue]=true;
+btn.classList.add('recording');
+btn.textContent='⏹️ Stop Recording';
+status.textContent='🎤 Listening...';
+status.style.color='#28a745';
+};
+rec.onresult=(e)=>{
+let txt='';
+for(let i=e.resultIndex;i<e.results.length;i++){
+txt+=e.results[i][0].transcript;
+}
+document.getElementById(`notes-${clue}`).value+=txt+' ';
+};
+rec.onerror=()=>{
+status.textContent='❌ Error';
+status.style.color='#dc3545';
+};
+rec.onend=()=>{
+voiceRecording[clue]=false;
+btn.classList.remove('recording');
+btn.textContent='🎤 Record Voice Note';
+status.textContent='✅ Recording added to notes';
+status.style.color='#28a745';
+};
+window[`rec${clue}`]=rec;
+rec.start();
+}else{
+status.textContent='❌ Voice not supported';
+status.style.color='#dc3545';
+}}else{
+if(window[`rec${clue}`])window[`rec${clue}`].stop();
+}}
+
+// Puzzle Creator & Collaboration
+async function sharePuzzle(clue){
+const pattern=document.getElementById(`pattern-${clue}`).value;
+const answer=document.getElementById(`answer-${clue}`).value;
+const desc=document.getElementById(`puzzle-desc-${clue}`).value;
+if(!pattern||!answer){
+document.getElementById(`share-status-${clue}`).textContent='❌ Fill in pattern and answer';
+return;
+}
+const puzzle={pattern,answer,desc,timestamp:Date.now()};
+try{
+const key=`puzzle-clue${clue}-${Date.now()}`;
+await window.storage.set(key,JSON.stringify(puzzle),true);
+document.getElementById(`share-status-${clue}`).textContent='✅ Puzzle shared with class!';
+document.getElementById(`pattern-${clue}`).value='';
+document.getElementById(`answer-${clue}`).value='';
+document.getElementById(`puzzle-desc-${clue}`).value='';
+setTimeout(()=>loadClassPuzzles(clue),1000);
+}catch(e){
+document.getElementById(`share-status-${clue}`).textContent='❌ Share failed';
+}}
+
+async function loadClassPuzzles(clue){
+try{
+const result=await window.storage.list(`puzzle-clue${clue}-`,true);
+if(!result||!result.keys){
+document.getElementById(`class-puzzles-${clue}`).innerHTML='<p>No puzzles yet. Be the first to create one!</p>';
+document.getElementById(`collab-count-${clue}`).textContent='0 classmates have shared puzzles';
+return;
+}
+const puzzles=[];
+for(const key of result.keys){
+try{
+const p=await window.storage.get(key,true);
+if(p)puzzles.push(JSON.parse(p.value));
+}catch(e){}}
+puzzles.sort((a,b)=>b.timestamp-a.timestamp);
+const recent=puzzles.slice(0,5);
+let html='';
+recent.forEach((p,i)=>{
+html+=`<div class="puzzle-card">
+<h4>Puzzle ${i+1}</h4>
+<p><strong>Pattern:</strong> ${p.pattern}</p>
+<p><strong>Description:</strong> ${p.desc||'Figure it out!'}</p>
+<p style="font-size:0.8em;color:#6c757d">Shared ${timeAgo(p.timestamp)}</p>
+</div>`;
+});
+document.getElementById(`class-puzzles-${clue}`).innerHTML=html;
+document.getElementById(`collab-count-${clue}`).textContent=`${puzzles.length} classmate${puzzles.length===1?'':'s'} have shared puzzles!`;
+}catch(e){
+document.getElementById(`class-puzzles-${clue}`).innerHTML='<p>Error loading puzzles</p>';
+}}
+
+function timeAgo(timestamp){
+const diff=Date.now()-timestamp;
+const mins=Math.floor(diff/60000);
+if(mins<1)return'just now';
+if(mins<60)return`${mins} min${mins===1?'':'s'} ago`;
+const hours=Math.floor(mins/60);
+if(hours<24)return`${hours} hour${hours===1?'':'s'} ago`;
+const days=Math.floor(hours/24);
+return`${days} day${days===1?'':'s'} ago`;
+}
+
+// Load notes and puzzles when page loads
+window.addEventListener('load',()=>{
+for(let i=1;i<=3;i++){
+loadNotes(i);
+loadClassPuzzles(i);
+}
+});
+</script>
+</body>
+</html>
